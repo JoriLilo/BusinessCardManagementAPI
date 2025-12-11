@@ -1,10 +1,12 @@
 package com.example.BusinessCardManagement.service;
 
 import com.example.BusinessCardManagement.entity.Employee;
+import com.example.BusinessCardManagement.exceptions.ResourceNotFoundException;
 import com.example.BusinessCardManagement.repository.EmployeeRepository;
+import org.springframework.stereotype.Service;
 
 import java.util.Optional;
-
+@Service
 public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeRepository employeeRepository;
@@ -16,11 +18,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     public Employee createEmployee(Employee employee) {
 
         if (employee == null) {
-            //throw exception
+            throw new ResourceNotFoundException("Employee is NULL");
         }
 
         if(employee.getEmail().equals(employeeRepository.findByEmail(employee.getEmail()))) {
-            //change the email.
+
+            throw new ResourceNotFoundException("Employee already exists");
+
         }
 
         if (employee.getStatus() == null) {
@@ -30,16 +34,16 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (employee.getRole() == null) {
             employee.setRole(Employee.Role.EMPLOYEE);
         }
+        employeeRepository.save(employee);
 
-        return employeeRepository.save(employee);
+        return employee;
     }
 
     @Override
     public Optional<Employee> getEmployeeById(Long id) {
-        if(employeeRepository.findById(id).isPresent()){
+
             return employeeRepository.findById(id);
-        }else
-             return  Optional.empty();
+
     }
 
     @Override
@@ -47,9 +51,10 @@ public class EmployeeServiceImpl implements EmployeeService {
         Optional<Employee> employee=employeeRepository.findById(id);
         if(employee.isPresent()){
             employee.get().setStatus(Employee.Status.ACTIVE);
-            return employeeRepository.save(employee.get());
+           employeeRepository.save(employee.get());
+            return employee.get();
         }
-        return null; //will call an exeption if possible
+       throw new ResourceNotFoundException("Employee not found");
     }
 
     @Override
@@ -58,7 +63,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         Optional<Employee> employee=employeeRepository.findById(id);
 
         if(employee.isEmpty()){
-            return Optional.empty();
+
+            throw new ResourceNotFoundException("Employee not found");
 
         }else {
             Employee em= employee.get(); //get the employee
@@ -74,9 +80,9 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public Optional<Employee> findByEmail(String email) {
-        if(employeeRepository.findByEmail(email).isPresent()){
+
             return employeeRepository.findByEmail(email);
-        }else
-            return Optional.empty();
+
+
     }
 }

@@ -2,6 +2,8 @@ package com.example.BusinessCardManagement.service;
 
 import com.example.BusinessCardManagement.entity.Card;
 import com.example.BusinessCardManagement.entity.Employee;
+import com.example.BusinessCardManagement.exceptions.InvalidRequestException;
+import com.example.BusinessCardManagement.exceptions.ResourceNotFoundException;
 import com.example.BusinessCardManagement.repository.CardRepository;
 import org.springframework.stereotype.Service;
 
@@ -28,21 +30,21 @@ public class CardServiceImpl implements CardService {
             return null;
         }
         Card card = new Card();
-        card.setCardNumber(generateCardNumber());
+        card.setCardNumber(generateCardNumber(16));
         card.setExpiryDate(LocalDate.now().plusYears(5));
         card.setEmployee(employee);
-       // handle later  card.setPinHash(hashPin(pin));
+        card.setPin(generateCardNumber(4));
         card.setStatus(Card.CardStatus.ACTIVE);
         card.setMonthlyLimit(new BigDecimal("1000")); // example
+        cardRepository.save(card);
 
-
-        return cardRepository.save(card);
+        return card;
     }
 
-    private String generateCardNumber() {
+    private String generateCardNumber(int n) {
         Random random = new Random();
         StringBuilder sb = new StringBuilder();
-        for(int i = 0; i < 16; i++){
+        for(int i = 0; i < n; i++){
             sb.append(random.nextInt(10));
         }
         return sb.toString();
@@ -68,11 +70,18 @@ public class CardServiceImpl implements CardService {
         if(card.isPresent()){
             Card card1=card.get();
             if(card1.getStatus().equals(Card.CardStatus.FROZEN)){
-                //will throw an exception
-            }else
+               throw new InvalidRequestException("Card is FROZEN");
+
+            }else {
                 card1.setStatus(Card.CardStatus.FROZEN);
-        }//else throw an exception
-        return cardRepository.save(card.get());
+                cardRepository.save(card1);
+                return card1;
+            }
+        }else
+            throw new ResourceNotFoundException("card does not exist");
+
+
+
     }
 
     @Override
@@ -82,11 +91,13 @@ public class CardServiceImpl implements CardService {
         if(card.isPresent()){
             Card card1=card.get();
             if(card1.getStatus().equals(Card.CardStatus.CANCELLED)){
-                //will throw an exception
+                throw new InvalidRequestException("Card is CANCELLED");
             }else
                 card1.setStatus(Card.CardStatus.CANCELLED);
-        }//else throw an exception
-        return cardRepository.save(card.get());
+            cardRepository.save(card1);
+            return card1;
+        }else
+            throw new ResourceNotFoundException("card does not exist");
     }
 
     @Override
@@ -94,28 +105,38 @@ public class CardServiceImpl implements CardService {
         Optional<Card> card=cardRepository.findById(id);
         if(card.isPresent()){
             Card card1=card.get();
-            card1.setMonthlyLimit(spendingLimit);
+            if(spendingLimit.compareTo(BigDecimal.ZERO)<=0){
+                throw new InvalidRequestException("Spending limit must be greater than zero");
+            }else {
+                card1.setMonthlyLimit(spendingLimit);
+                cardRepository.save(card1);
+                return card1;
+
+            }
         }
-        return cardRepository.save(card.get());
+        throw new ResourceNotFoundException("card does not exist");
+
     }
 
     @Override
     public void validateCardPIN(Long cardId, String pin) {
 
 
-        Optional<Card> card=cardRepository.findById(cardId);
-        if(card.isPresent()){
-            Card card1=card.get();
+        Optional<Card> card = cardRepository.findById(cardId);
+        if (card.isPresent()) {
+            Card card1 = card.get();
 
-            if(card1.getPinHash().equals(pin)){
+            if (card1.getPin().equals(pin)) {
                 card1.setStatus(Card.CardStatus.ACTIVE);
-            }else if(nrOfWrongPin<3){
-                nrOfWrongPin++;
-                System.out.println("Invalid pin");
-            }else
+            } else {
                 card1.setStatus(Card.CardStatus.BLOCKED);
+                throw new InvalidRequestException("Wrong Pin, card is being blocked");
+
+            }
+            cardRepository.save(card1);
+
+
         }
-
-
+        throw new ResourceNotFoundException("card does not exist");
     }
 }

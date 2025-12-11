@@ -32,7 +32,7 @@ public class Card {
     private Employee employee;
 
     @Column(nullable = false)
-    private String pinHash; // NEVER store raw PINs
+    private String pin; // NEVER store raw PINs
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
