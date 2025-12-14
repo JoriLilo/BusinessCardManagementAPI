@@ -4,6 +4,8 @@ import com.example.BusinessCardManagement.entity.Employee;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.Optional;
+
 @Data
 @Builder
 public class EmployeeResponseDto {
@@ -15,14 +17,14 @@ public class EmployeeResponseDto {
     private Employee.Status status;
     private Employee.Role role;
 
-    public static EmployeeResponseDto fromEntity(Employee employee) {
+    public static EmployeeResponseDto fromEntity(Optional<Employee> employee) {
 
         return EmployeeResponseDto.builder()
-                .id(employee.getId())
-                .name(employee.getName())
-                .email(employee.getEmail())
-                .status(employee.getStatus())
-                .role(employee.getRole())
+                .id(employee.get().getId())
+                .name(employee.get().getName())
+                .email(employee.get().getEmail())
+                .status(employee.get().getStatus())
+                .role(employee.get().getRole())
                 .build();
 
     }
