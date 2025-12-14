@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/Card")
+@RequestMapping("/Card")  // the path
 public class CardController {
 
     public final CardService cardService;
